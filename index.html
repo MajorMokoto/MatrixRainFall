@@ -1,0 +1,2073 @@
+<title>The Matrix Has You</title>
+<style>
+  :root{
+    --bg: #030805;
+    --bg-fade-alpha: 0.085;
+    --glyph-lead: #d9ffe4;
+    --glyph-bright: #2bff6b;
+    --glyph-mid: #10b345;
+    --glyph-dim: #0a3f1c;
+    --panel-bg: rgba(4, 12, 7, 0.82);
+    --panel-border: #17351f;
+    --panel-border-hover: #2bff6b;
+    --text-primary: #b6ffce;
+    --text-muted: #4f8a63;
+    --accent: #2bff6b;
+    --focus-ring: #d9ffe4;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  body {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", "Consolas", "Roboto Mono", monospace;
+    color: var(--text-primary);
+  }
+
+  canvas#rain {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: var(--bg);
+  }
+
+  .mark {
+    position: fixed;
+    top: 20px;
+    left: 22px;
+    z-index: 5;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 0.6s ease;
+  }
+  .mark strong {
+    color: var(--glyph-bright);
+    font-weight: 600;
+  }
+  body.dim .mark { opacity: 0.18; }
+
+  .panel-tab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 9px 14px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .panel-tab:hover, .panel-tab:focus-visible { color: var(--glyph-bright); border-color: var(--panel-border-hover); }
+  .panel-tab:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .panel-tab .glyph { color: var(--glyph-bright); font-size: 13px; }
+  .panel-tab .tab-label {
+    display: inline-block;
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 0.3s ease, margin-left 0.3s ease, opacity 0.2s ease;
+  }
+  .panel-tab:hover .tab-label,
+  .panel-tab:focus-visible .tab-label {
+    max-width: 100px;
+    margin-left: 8px;
+    opacity: 1;
+  }
+
+  .panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10;
+    width: 240px;
+    padding: 18px 18px 16px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    backdrop-filter: blur(6px);
+    transform: translateY(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+  }
+  .panel.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .panel h2 {
+    margin: 0 0 14px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel h2 button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px;
+  }
+  .panel h2 button:hover, .panel h2 button:focus-visible { color: var(--glyph-bright); }
+  .panel h2 button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-of-type { margin-bottom: 0; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .field label span.val {
+    color: var(--glyph-bright);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--glyph-dim);
+    border-radius: 2px;
+    outline: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    touch-action: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    -webkit-user-drag: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--glyph-bright);
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--glyph-bright);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: var(--glyph-bright);
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--glyph-bright);
+  }
+  input[type="range"]:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+  .swatches { display: flex; gap: 8px; }
+  .swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  .swatch[aria-pressed="true"] { border-color: var(--text-primary); }
+  .swatch:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  .charsets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .charset-toggle {
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .charset-toggle:hover, .charset-toggle:focus-visible { border-color: var(--panel-border-hover); }
+  .charset-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  .charset-toggle[aria-pressed="true"] { color: var(--glyph-bright); border-color: var(--glyph-bright); }
+
+  .pause-btn {
+    width: 100%;
+    margin-top: 16px;
+    padding: 8px 0;
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    border-radius: 3px;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .pause-btn:hover, .pause-btn:focus-visible { border-color: var(--glyph-bright); color: var(--glyph-bright); }
+  .pause-btn[aria-pressed="false"]:hover, .pause-btn[aria-pressed="false"]:focus-visible { color: #ff2b4d; }
+  .pause-btn[aria-pressed="true"]:hover, .pause-btn[aria-pressed="true"]:focus-visible { color: #2b6bff; }
+  .pause-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+  .resume-cta {
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .resume-cta.show { display: flex; }
+  .resume-cta button {
+    padding: 14px 28px;
+    background: var(--panel-bg);
+    border: 1px solid var(--glyph-bright);
+    border-radius: 3px;
+    color: var(--glyph-bright);
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .resume-cta button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+
+  .system-failure {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 7;
+    padding: 10px 24px;
+    border: 3px solid var(--glyph-lead);
+    background: rgba(3, 8, 5, 0.55);
+    color: var(--glyph-lead);
+    font: inherit;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-shadow: 0 0 6px var(--glyph-bright), 0 0 18px var(--glyph-bright);
+    box-shadow: 0 0 5px var(--glyph-bright), 0 0 12px var(--glyph-bright), inset 0 0 12px var(--glyph-bright);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .system-failure.show { opacity: 1; }
+</style>
+
+<canvas id="rain" aria-hidden="true"></canvas>
+
+<button class="panel-tab" id="panelTab" aria-expanded="false" aria-controls="panel">
+  <span class="glyph">⌁</span><span class="tab-label">the matrix</span>
+</button>
+
+<div class="panel" id="panel" role="group" aria-label="Rain settings">
+  <h2>Controls <button id="panelClose" aria-label="Close controls">✕</button></h2>
+
+  <div class="field">
+    <label for="speed">Speed <span class="val" id="speedVal">1.00×</span></label>
+    <input type="range" id="speed" min="0.017" max="3.1" step="0.01" value="1.0" draggable="false" />
+  </div>
+
+  <div class="field">
+    <label for="zoom">Font size <span class="val" id="zoomVal">48px</span></label>
+    <input type="range" id="zoom" min="12" max="50" step="1" value="48" draggable="false" />
+  </div>
+
+  <div class="field">
+    <label for="density">Density <span class="val" id="densityVal">100%</span></label>
+    <input type="range" id="density" min="0" max="100" step="5" value="100" draggable="false" />
+  </div>
+
+  <div class="field">
+    <label for="trailLen">Trail length <span class="val" id="trailLenVal">25%</span></label>
+    <input type="range" id="trailLen" min="20" max="250" step="5" value="25" draggable="false" />
+  </div>
+
+  <div class="field">
+    <label for="burst">Burst <span class="val" id="burstVal">100%</span></label>
+    <input type="range" id="burst" min="0" max="100" step="5" value="100" draggable="false" />
+  </div>
+
+  <div class="field">
+    <label for="residualsCount">Effects per burst <span class="val" id="residualsCountVal">27</span></label>
+    <input type="range" id="residualsCount" min="1" max="28" step="1" value="27" draggable="false" />
+  </div>
+
+  <div class="field">
+    <label id="residualsLabel">Residuals</label>
+    <div class="charsets" role="group" aria-labelledby="residualsLabel">
+      <button class="charset-toggle" id="residualsToggle" aria-pressed="true">On</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="dejaVuLabel">Deja Vu</label>
+    <div class="charsets" role="group" aria-labelledby="dejaVuLabel">
+      <button class="charset-toggle" id="dejaVuToggle" aria-pressed="true">On</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="charsetLabel">Characters</label>
+    <div class="charsets" role="group" aria-labelledby="charsetLabel">
+      <button class="charset-toggle" data-charset="katakana" aria-pressed="true">カナ</button>
+      <button class="charset-toggle" data-charset="digits" aria-pressed="true">0-9</button>
+      <button class="charset-toggle" data-charset="letters" aria-pressed="true">a-z</button>
+      <button class="charset-toggle" data-charset="symbols" aria-pressed="true">+=÷</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="colorLabel">Signal</label>
+    <div class="swatches" role="group" aria-labelledby="colorLabel">
+      <button class="swatch" data-theme="green" aria-label="Classic green" aria-pressed="true" style="background:#2bff6b;"></button>
+      <button class="swatch" data-theme="cyan" aria-label="Cyan" aria-pressed="false" style="background:#2be7ff;"></button>
+      <button class="swatch" data-theme="amber" aria-label="Amber" aria-pressed="false" style="background:#ffb32b;"></button>
+      <button class="swatch" data-theme="crimson" aria-label="Crimson" aria-pressed="false" style="background:#ff2b4d;"></button>
+    </div>
+  </div>
+
+  <button class="pause-btn" id="pauseBtn" aria-pressed="false">Take the Red Pill</button>
+</div>
+
+<div class="resume-cta" id="resumeCta">
+  <button id="resumeBtn">▶ Start rain</button>
+</div>
+
+<div class="system-failure" id="systemFailure" aria-hidden="true">System Failure</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var canvas = document.getElementById("rain");
+  var gl = canvas.getContext("webgl2");
+  if (!gl) {
+    document.body.textContent = "This effect needs WebGL2, which your browser doesn't support.";
+    return;
+  }
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var THEMES = {
+    green:   { lead: "#bfffd3", bright: "#2bff6b", mid: "#10b345", dim: "#0a3f1c" },
+    cyan:    { lead: "#bff8ff", bright: "#2be7ff", mid: "#0f9fb3", dim: "#093a41" },
+    amber:   { lead: "#ffe8bf", bright: "#ffb32b", mid: "#b37810", dim: "#402a09" },
+    crimson: { lead: "#ffbfca", bright: "#ff2b4d", mid: "#b31032", dim: "#3f0a17" }
+  };
+
+  // Split into named sets so each can be toggled independently (see the
+  // "Characters" checkboxes) — CHARS itself stays the union of all four,
+  // since the atlas (buildAtlas) always bakes every glyph regardless of
+  // which sets are currently enabled; only randChar's pool changes live.
+  var CHAR_SETS = {
+    katakana: (function () {
+      var s = "";
+      for (var i = 0xFF66; i <= 0xFF9D; i++) s += String.fromCharCode(i);
+      return s;
+    })(),
+    digits: "0123456789",
+    letters: "abcdefghijklmnopqrstuvwxyz",
+    symbols: "+-*=<>[]{}∴∵÷∞"
+  };
+
+  var CHARS = CHAR_SETS.katakana + CHAR_SETS.digits + CHAR_SETS.letters + CHAR_SETS.symbols;
+
+  // Punctuation the ASCII-art cat test needs that isn't part of any
+  // toggleable rain character set — baked into the atlas (see BAKE_CHARS
+  // below) without being added to the random rain pool itself.
+  var EXTRA_GLYPHS = "|\\_,(`)./^'\":";
+  var BAKE_CHARS = CHARS + EXTRA_GLYPHS;
+
+  // Two Deja Vu cats, alternated each time a reveal triggers (see
+  // startCatReveal) — both rendered with the same glyph atlas/pipeline as
+  // the rain itself (just placed in a fixed grid instead of falling), so
+  // they read as "made of the same code" rather than a separate shape.
+  var CAT_ASCII_A = [
+    " _._     _,-'\"\"`-._",
+    "(,-.`._,'(       |\\`-/|",
+    "    `-.-' \\ )-`( , o o)",
+    "          `-    \\`_`\"'-"
+  ];
+  var CAT_ASCII_B = [
+    "                                               .--.",
+    "                                               `.  \\",
+    "                                                 \\  \\",
+    "                                                  .  \\",
+    "                                                  :   .",
+    "                                                  |    .",
+    "                                                  |    :",
+    "                                                  |    |",
+    "  ..._  ___                                       |    |",
+    " `.\"\".`''''\"\"--..___                              |    |",
+    " ,-\\  \\             \"\"-...__         _____________/    |",
+    " / ` \" '                    `\"\"\"\"\"\"\"\"                  .",
+    " \\                                                      L",
+    " (>                                                      \\",
+    "/                                                         \\",
+    "\\_    ___..---.                                            L",
+    "  `--'         '.                                           \\",
+    "                 .                                           \\_",
+    "                _/`.                                           `.._",
+    "             .'     -.                                             `.",
+    "            /     __.-Y     /''''''-...___,...--------.._            |",
+    "           /   _.\"    |    /                ' .      \\   '---..._    |",
+    "          /   /      /    /                _,. '    ,/           |   |",
+    "          \\_,'     _.'   /              /''     _,-'            _|   |",
+    "                  '     /               `-----''               /     |",
+    "                  `...-'                                       `...-'"
+  ];
+  // A horizontally-mirrored third variant, derived from CAT_ASCII_B —
+  // just reversing each line's character order would leave every
+  // diagonal stroke leaning the wrong way (a "/" mirrored in place is
+  // still a "/", but should read as "\" once the whole shape is facing
+  // the other direction), so directional characters are swapped too.
+  var MIRROR_CHAR_MAP = { "/": "\\", "\\": "/", "(": ")", ")": "(", "<": ">", ">": "<", "[": "]", "]": "[", "{": "}", "}": "{" };
+  function mirrorArt(art) {
+    var maxLen = 0;
+    for (var i = 0; i < art.length; i++) maxLen = Math.max(maxLen, art[i].length);
+    var out = [];
+    for (var r = 0; r < art.length; r++) {
+      var line = art[r];
+      while (line.length < maxLen) line += " ";
+      var chars = [];
+      for (var c = line.length - 1; c >= 0; c--) {
+        var ch = line[c];
+        chars.push(MIRROR_CHAR_MAP[ch] || ch);
+      }
+      out.push(chars.join(""));
+    }
+    return out;
+  }
+  var CAT_ASCII_C = mirrorArt(CAT_ASCII_B);
+
+  var CAT_VARIANTS = [CAT_ASCII_A, CAT_ASCII_B, CAT_ASCII_C];
+  var catVariantIndex = 0; // alternates every reveal, see startCatReveal
+
+  function activeChars() {
+    var pool = "";
+    for (var key in CHAR_SETS) {
+      if (state.charSets[key]) pool += CHAR_SETS[key];
+    }
+    // Never let every set being off collapse the rain to nothing — fall
+    // back to the full pool rather than crash on an empty random index.
+    return pool.length > 0 ? pool : CHARS;
+  }
+
+  function randChar() {
+    var pool = activeChars();
+    return pool[(Math.random() * pool.length) | 0];
+  }
+
+  // 0-1 float RGB, since these now feed GPU buffers instead of ctx.fillStyle strings.
+  function hexToRgb01(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  }
+
+  for (var themeKey in THEMES) {
+    var themeVal = THEMES[themeKey];
+    themeVal.key = themeKey;
+    themeVal.leadRgb = hexToRgb01(themeVal.lead);
+    themeVal.brightRgb = hexToRgb01(themeVal.bright);
+    themeVal.midRgb = hexToRgb01(themeVal.mid);
+    themeVal.dimRgb = hexToRgb01(themeVal.dim);
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function lerpRgb(c1, c2, t) {
+    return [lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t)];
+  }
+
+  // Same fade math as before, but returns a reused [r,g,b,a] array (0-1
+  // range) instead of building an "rgba(...)" string — it now feeds a GPU
+  // instance buffer directly instead of ctx.fillStyle.
+  var trailColorOut = [0, 0, 0, 0];
+  function trailColor(theme, f) {
+    var rgb;
+    if (f < 0.4) {
+      rgb = theme.brightRgb;
+    } else if (f < 0.95) {
+      rgb = lerpRgb(theme.brightRgb, theme.midRgb, (f - 0.4) / 0.55);
+    } else {
+      rgb = lerpRgb(theme.midRgb, theme.dimRgb, (f - 0.95) / 0.05);
+    }
+    trailColorOut[0] = rgb[0];
+    trailColorOut[1] = rgb[1];
+    trailColorOut[2] = rgb[2];
+    trailColorOut[3] = Math.max(0.05, 1 - Math.pow(f, 0.6));
+    return trailColorOut;
+  }
+
+  var state = {
+    theme: "green",
+    speedMul: 1.0,
+    densityPct: 100,
+    burstPct: 100,
+    trailLenMul: 0.25,
+    fontSize: 48,
+    running: !reduceMotion,
+    cols: [],
+    floodFalls: [],
+    w: 0,
+    h: 0,
+    // Déjà vu cat: a mostly-transparent silhouette that walks across the
+    // screen behind the rain. TESTING: walks continuously, looping
+    // edge-to-edge — timer-gated occasional walks come later, see updateCat.
+    catActive: false,
+    catX: 0,
+    catY: 0,
+    catDir: 1,
+    catSpeed: 0,
+    catW: 0,
+    catH: 0,
+    catGaitPhase: 0,
+    // Matches what's actually visible in the film's rain: half-width
+    // katakana, digits, symbols, and lowercase Latin letters (not A-Z).
+    charSets: { katakana: true, digits: true, letters: true, symbols: true },
+    // "Residuals" — hidden character names occasionally readable in the
+    // rain during a burst, see MESSAGE_WORDS/trySpawnAllMessages.
+    residualsEnabled: true,
+    residualsCount: 26, // overwritten to MESSAGE_WORDS.length+1 at init, see residualsCountEl below
+    // "Deja Vu" — the ASCII cat that occasionally materializes, fixed in
+    // place, during a burst, see CAT_VARIANTS/startCatReveal.
+    dejaVuEnabled: true
+  };
+
+  function setRootVars(theme) {
+    var t = THEMES[theme];
+    var root = document.documentElement.style;
+    root.setProperty("--glyph-lead", t.lead);
+    root.setProperty("--glyph-bright", t.bright);
+    root.setProperty("--glyph-mid", t.mid);
+    root.setProperty("--glyph-dim", t.dim);
+  }
+
+  // ---- Font atlas: every glyph baked once, solid white, into one texture.
+  // Color is applied per-instance in the shader, so this single atlas covers
+  // every theme and every trail-depth shade — no per-theme/per-character
+  // cache, and no rebuild on zoom, since the GPU scales the quad, not the
+  // texture.
+  var ATLAS_CELL = 64;
+  var TOTAL_CELLS = BAKE_CHARS.length + 1; // +1 reserved solid-fill cell, see blockUV below
+  var atlasCols = Math.ceil(Math.sqrt(TOTAL_CELLS));
+  var atlasRows = Math.ceil(TOTAL_CELLS / atlasCols);
+  var charUV = {};
+  var blockUV;
+  var atlasTexture;
+
+  function buildAtlas() {
+    var atlasCanvas = document.createElement("canvas");
+    atlasCanvas.width = atlasCols * ATLAS_CELL;
+    atlasCanvas.height = atlasRows * ATLAS_CELL;
+    var actx = atlasCanvas.getContext("2d");
+    actx.fillStyle = "#fff";
+    actx.font = Math.floor(ATLAS_CELL * 0.72) + "px ui-monospace, Consolas, monospace";
+    actx.textAlign = "center";
+    actx.textBaseline = "middle";
+    for (var i = 0; i < BAKE_CHARS.length; i++) {
+      var cx = i % atlasCols;
+      var cy = (i / atlasCols) | 0;
+      actx.fillText(BAKE_CHARS[i], cx * ATLAS_CELL + ATLAS_CELL / 2, cy * ATLAS_CELL + ATLAS_CELL / 2);
+      charUV[BAKE_CHARS[i]] = [cx / atlasCols, cy / atlasRows, (cx + 1) / atlasCols, (cy + 1) / atlasRows];
+    }
+
+    // One reserved solid-filled cell, sampled by a "wipe" quad drawn under
+    // a head glyph. A glyph's own texture is transparent everywhere except
+    // its ink strokes, so an opaque head alone doesn't hide a tail glyph
+    // sitting behind it in the gaps around the character — this solid
+    // block does, for just that one cell.
+    var bi = BAKE_CHARS.length;
+    var bx = bi % atlasCols, by = (bi / atlasCols) | 0;
+    actx.fillRect(bx * ATLAS_CELL, by * ATLAS_CELL, ATLAS_CELL, ATLAS_CELL);
+    blockUV = [bx / atlasCols, by / atlasRows, (bx + 1) / atlasCols, (by + 1) / atlasRows];
+
+    atlasTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasCanvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+
+  // ---- Déjà vu cat: a procedural rig, not a sprite flipbook. Four simple
+  // silhouette shapes (body, head, leg, tail segment) are baked once into a
+  // small shared parts atlas; every frame, writeCatRig() computes a real
+  // walk-cycle gait (sine-based hip/knee swing, diagonal leg pairing, a
+  // lagging tail sway, a light body bob) and places ~12 independently
+  // rotated instances of those four shapes. Rotation needs a pivot point
+  // per instance (a hip, a shoulder, the base of the tail) that the flat
+  // glyph/glow pipeline has no use for, so this gets its own tiny shader
+  // (see catPartsVsSrc) instead of reusing glyphProgram.
+  // Baked 3x oversized (192px cells) versus the ~64px on-screen size the
+  // rig currently draws at, so the silhouette edges stay crisp if the cat
+  // is later scaled up — shape coordinates below are still authored in a
+  // readable 64-unit space; BAKE_SCALE stretches that up when rasterizing.
+  var CAT_PART_CELL = 192;
+  var BAKE_SCALE = CAT_PART_CELL / 64;
+  var catPartsTexture;
+  var catPartUV = {};
+
+  function roundedTrapezoid(cx, x0, w0, x1, w1, yTop, yBot) {
+    cx.beginPath();
+    cx.moveTo(x0 - w0 / 2, yTop);
+    cx.lineTo(x0 + w0 / 2, yTop);
+    cx.lineTo(x1 + w1 / 2, yBot);
+    cx.lineTo(x1 - w1 / 2, yBot);
+    cx.closePath();
+    cx.fill();
+  }
+
+  function buildCatPartsTexture() {
+    var cols = 2, rows = 2;
+    var c = document.createElement("canvas");
+    c.width = CAT_PART_CELL * cols;
+    c.height = CAT_PART_CELL * rows;
+    var cx = c.getContext("2d");
+    cx.fillStyle = "#fff";
+
+    function cellOrigin(i) {
+      var cxi = i % cols, cyi = (i / cols) | 0;
+      return [cxi * CAT_PART_CELL, cyi * CAT_PART_CELL];
+    }
+    function uvFor(i) {
+      var cxi = i % cols, cyi = (i / cols) | 0;
+      return [cxi / cols, cyi / rows, (cxi + 1) / cols, (cyi + 1) / rows];
+    }
+
+    // Cell 0: body — a horizontal capsule, drawn centered in its cell so a
+    // (0.5, 0.5) pivot sits at the torso's own center.
+    var o = cellOrigin(0);
+    cx.save();
+    cx.translate(o[0], o[1]);
+    cx.scale(BAKE_SCALE, BAKE_SCALE);
+    cx.beginPath();
+    cx.moveTo(6, 20);
+    cx.quadraticCurveTo(6, 12, 18, 12);
+    cx.lineTo(46, 12);
+    cx.quadraticCurveTo(58, 12, 58, 20);
+    cx.lineTo(58, 30);
+    cx.quadraticCurveTo(58, 38, 46, 38);
+    cx.lineTo(18, 38);
+    cx.quadraticCurveTo(6, 38, 6, 30);
+    cx.closePath();
+    cx.fill();
+    cx.restore();
+    catPartUV.body = uvFor(0);
+
+    // Cell 1: head + ears, pivot at (0.5, 0.5) — the neck join, roughly the
+    // shape's own center, is close enough for a small silhouette part.
+    o = cellOrigin(1);
+    cx.save();
+    cx.translate(o[0], o[1]);
+    cx.scale(BAKE_SCALE, BAKE_SCALE);
+    cx.beginPath();
+    cx.arc(32, 36, 17, 0, Math.PI * 2);
+    cx.fill();
+    cx.beginPath();
+    cx.moveTo(20, 24); cx.lineTo(15, 4); cx.lineTo(29, 20); cx.closePath(); cx.fill();
+    cx.beginPath();
+    cx.moveTo(44, 24); cx.lineTo(49, 4); cx.lineTo(35, 20); cx.closePath(); cx.fill();
+    cx.restore();
+    catPartUV.head = uvFor(1);
+
+    // Cell 2: a leg segment — tapered trapezoid, pivot at (0.5, 0.05) i.e.
+    // its own top edge (the hip/knee it swings from), reused at different
+    // sizes for both thigh and shin.
+    o = cellOrigin(2);
+    cx.save();
+    cx.translate(o[0], o[1]);
+    cx.scale(BAKE_SCALE, BAKE_SCALE);
+    roundedTrapezoid(cx, 32, 15, 32, 8, 3, 61);
+    cx.restore();
+    catPartUV.leg = uvFor(2);
+
+    // Cell 3: a tail segment — tapered trapezoid oriented along X, pivot at
+    // (0.05, 0.5) i.e. its own left edge (the joint it swings from),
+    // chained segment-to-segment for the sway.
+    o = cellOrigin(3);
+    cx.save();
+    cx.translate(o[0], o[1]);
+    cx.scale(BAKE_SCALE, BAKE_SCALE);
+    cx.beginPath();
+    cx.moveTo(3, 24);
+    cx.lineTo(3, 40);
+    cx.lineTo(61, 36);
+    cx.lineTo(61, 28);
+    cx.closePath();
+    cx.fill();
+    cx.restore();
+    catPartUV.tail = uvFor(3);
+
+    catPartsTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, catPartsTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+
+  // ---- Shaders. Vertex logic is shared by both programs: it places an
+  // instanced unit quad (aUnit, 0..1) at aPos/aSize in pixel space and
+  // converts to clip space. The glyph fragment shader samples the atlas;
+  // the glow fragment shader needs no texture at all — it computes a soft
+  // radial falloff procedurally from vUV (which for glow instances is just
+  // set to the quad's own 0..1 local space via aUV = (0,0,1,1)).
+  var vsSrc = [
+    "#version 300 es",
+    "layout(location=0) in vec2 aUnit;",
+    "layout(location=1) in vec2 aPos;",
+    "layout(location=2) in vec2 aSize;",
+    "layout(location=3) in vec4 aUV;",
+    "layout(location=4) in vec4 aColor;",
+    "uniform vec2 uResolution;",
+    "out vec2 vUV;",
+    "out vec4 vColor;",
+    "void main() {",
+    "  vec2 pixelPos = aPos + aUnit * aSize;",
+    "  vec2 clip = (pixelPos / uResolution) * 2.0 - 1.0;",
+    "  clip.y = -clip.y;",
+    "  gl_Position = vec4(clip, 0.0, 1.0);",
+    "  vUV = mix(aUV.xy, aUV.zw, aUnit);",
+    "  vColor = aColor;",
+    "}"
+  ].join("\n");
+
+  var glyphFsSrc = [
+    "#version 300 es",
+    "precision mediump float;",
+    "in vec2 vUV;",
+    "in vec4 vColor;",
+    "uniform sampler2D uAtlas;",
+    "out vec4 outColor;",
+    "void main() {",
+    "  float a = texture(uAtlas, vUV).a;",
+    "  outColor = vec4(vColor.rgb, vColor.a * a);",
+    "}"
+  ].join("\n");
+
+  var glowFsSrc = [
+    "#version 300 es",
+    "precision mediump float;",
+    "in vec2 vUV;",
+    "in vec4 vColor;",
+    "out vec4 outColor;",
+    "void main() {",
+    "  float dist = length(vUV - vec2(0.5)) * 2.0;",
+    "  float falloff = pow(max(1.0 - smoothstep(0.0, 1.0, dist), 0.0), 2.4);",
+    "  outColor = vec4(vColor.rgb, vColor.a * falloff);",
+    "}"
+  ].join("\n");
+
+  // Cat-rig vertex shader — same clip-space math as vsSrc, but the quad
+  // rotates around an explicit per-instance pivot (aPivot, in the quad's
+  // own 0..1 local space) instead of always placing aPos at its top-left
+  // corner. When aRot is 0 and aPivot is (0,0) this reduces to exactly
+  // vsSrc's placement, so pieces of the rig that don't need rotation still
+  // behave like an ordinary glyph quad.
+  var catPartsVsSrc = [
+    "#version 300 es",
+    "layout(location=0) in vec2 aUnit;",
+    "layout(location=1) in vec2 aPos;",
+    "layout(location=2) in vec2 aSize;",
+    "layout(location=3) in vec4 aUV;",
+    "layout(location=4) in vec4 aColor;",
+    "layout(location=5) in float aRot;",
+    "layout(location=6) in vec2 aPivot;",
+    "uniform vec2 uResolution;",
+    "out vec2 vUV;",
+    "out vec4 vColor;",
+    "void main() {",
+    "  vec2 local = (aUnit - aPivot) * aSize;",
+    "  float c = cos(aRot), s = sin(aRot);",
+    "  vec2 rotated = vec2(local.x * c - local.y * s, local.x * s + local.y * c);",
+    "  vec2 pixelPos = aPos + rotated + aPivot * aSize;",
+    "  vec2 clip = (pixelPos / uResolution) * 2.0 - 1.0;",
+    "  clip.y = -clip.y;",
+    "  gl_Position = vec4(clip, 0.0, 1.0);",
+    "  vUV = mix(aUV.xy, aUV.zw, aUnit);",
+    "  vColor = aColor;",
+    "}"
+  ].join("\n");
+
+  function compileShader(type, src) {
+    var sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(sh));
+    }
+    return sh;
+  }
+  function linkProgram(vs, fs) {
+    var p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(p));
+    }
+    return p;
+  }
+
+  var sharedVs = compileShader(gl.VERTEX_SHADER, vsSrc);
+  var glyphProgram = linkProgram(sharedVs, compileShader(gl.FRAGMENT_SHADER, glyphFsSrc));
+  var glowProgram = linkProgram(sharedVs, compileShader(gl.FRAGMENT_SHADER, glowFsSrc));
+  // Reuses glyphFsSrc as-is (texture-alpha sampling is identical) — only the
+  // vertex stage differs for the cat rig.
+  var catPartsProgram = linkProgram(
+    compileShader(gl.VERTEX_SHADER, catPartsVsSrc),
+    compileShader(gl.FRAGMENT_SHADER, glyphFsSrc)
+  );
+
+  var glyphUResolution = gl.getUniformLocation(glyphProgram, "uResolution");
+  var glyphUAtlas = gl.getUniformLocation(glyphProgram, "uAtlas");
+  var glowUResolution = gl.getUniformLocation(glowProgram, "uResolution");
+  var catPartsUResolution = gl.getUniformLocation(catPartsProgram, "uResolution");
+  var catPartsUAtlas = gl.getUniformLocation(catPartsProgram, "uAtlas");
+
+  // ---- Geometry + instance buffers. One static unit quad, reused via
+  // vertexAttribDivisor for every instance; two dynamic per-instance
+  // buffers (glyphs, glow halos) rebuilt and re-uploaded once per frame.
+  var quadBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+
+  var INSTANCE_FLOATS = 12; // pos(2) size(2) uv(4) color(4)
+  // Instance capacity starts modest and doubles on demand (see
+  // ensureCapacity) instead of a fixed cap — a fixed cap silently drops
+  // whatever doesn't fit once exceeded (confirmed via live instrumentation:
+  // at 200% density / 100% burst, stacked flood bursts pushed the needed
+  // count well past a hardcoded 20,000, and the resulting frame-to-frame
+  // truncation was exactly the "wave" of glyphs flickering out that showed
+  // up under heavy load).
+  var INITIAL_CAPACITY = 4096;
+  var glyphCapacity = INITIAL_CAPACITY;
+  var glyphData = new Float32Array(glyphCapacity * INSTANCE_FLOATS);
+  var glyphCount = 0;
+  var glowCapacity = INITIAL_CAPACITY;
+  var glowData = new Float32Array(glowCapacity * INSTANCE_FLOATS);
+  var glowCount = 0;
+  // Head-wipe quads get their own instance stream (drawn with the glyph
+  // program/atlas, same as glyphBuffer) so they can be issued as a separate
+  // draw call BEFORE the glow pass — see render(). They used to share
+  // glyphBuffer with the text glyphs, which put them in the same draw call
+  // as the crisp head glyph and therefore after the glow pass, so the
+  // opaque wipe quad painted over (hid) its own head's glow.
+  var wipeCapacity = INITIAL_CAPACITY;
+  var wipeData = new Float32Array(wipeCapacity * INSTANCE_FLOATS);
+  var wipeCount = 0;
+
+  var glyphBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, glyphBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, glyphData.byteLength, gl.DYNAMIC_DRAW);
+
+  var glowBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, glowBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, glowData.byteLength, gl.DYNAMIC_DRAW);
+
+  var wipeBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, wipeBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, wipeData.byteLength, gl.DYNAMIC_DRAW);
+
+  // Cat rig: a fixed set of parts (see CAT_PART_COUNT/writeCatRig) — no
+  // growable capacity needed, and each instance carries 3 extra floats
+  // (rotation + pivot) that plain glyph/glow/wipe instances don't.
+  var CAT_PART_FLOATS = 15; // pos(2) size(2) uv(4) color(4) rot(1) pivot(2)
+  var CAT_PART_COUNT = 12; // body, head, 2 tail segments, 4 legs x 2 segments
+  var catPartsData = new Float32Array(CAT_PART_COUNT * CAT_PART_FLOATS);
+  var catPartsBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, catPartsBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, catPartsData.byteLength, gl.DYNAMIC_DRAW);
+
+  function createVAO(instanceBuffer) {
+    var vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+    var stride = INSTANCE_FLOATS * 4;
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribDivisor(1, 1);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 2, gl.FLOAT, false, stride, 8);
+    gl.vertexAttribDivisor(2, 1);
+    gl.enableVertexAttribArray(3);
+    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, stride, 16);
+    gl.vertexAttribDivisor(3, 1);
+    gl.enableVertexAttribArray(4);
+    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, stride, 32);
+    gl.vertexAttribDivisor(4, 1);
+
+    gl.bindVertexArray(null);
+    return vao;
+  }
+
+  var glyphVAO = createVAO(glyphBuffer);
+  var glowVAO = createVAO(glowBuffer);
+  var wipeVAO = createVAO(wipeBuffer);
+
+  // Same attribute layout as createVAO's first 5 (locations 0-4), plus
+  // aRot (location 5) and aPivot (location 6) for the rig's per-part
+  // rotation — see catPartsVsSrc.
+  function createCatPartsVAO(instanceBuffer) {
+    var vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+    var stride = CAT_PART_FLOATS * 4;
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribDivisor(1, 1);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 2, gl.FLOAT, false, stride, 8);
+    gl.vertexAttribDivisor(2, 1);
+    gl.enableVertexAttribArray(3);
+    gl.vertexAttribPointer(3, 4, gl.FLOAT, false, stride, 16);
+    gl.vertexAttribDivisor(3, 1);
+    gl.enableVertexAttribArray(4);
+    gl.vertexAttribPointer(4, 4, gl.FLOAT, false, stride, 32);
+    gl.vertexAttribDivisor(4, 1);
+    gl.enableVertexAttribArray(5);
+    gl.vertexAttribPointer(5, 1, gl.FLOAT, false, stride, 48);
+    gl.vertexAttribDivisor(5, 1);
+    gl.enableVertexAttribArray(6);
+    gl.vertexAttribPointer(6, 2, gl.FLOAT, false, stride, 52);
+    gl.vertexAttribDivisor(6, 1);
+
+    gl.bindVertexArray(null);
+    return vao;
+  }
+
+  var catPartsVAO = createCatPartsVAO(catPartsBuffer);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  var BG_R = 3 / 255, BG_G = 8 / 255, BG_B = 5 / 255;
+  gl.clearColor(BG_R, BG_G, BG_B, 1);
+
+  // Doubles a buffer's capacity (and its GPU-side allocation) until it can
+  // hold `needed` instances. Existing entries carry over, so this can run
+  // mid-frame without disturbing whatever's already been pushed this frame.
+  function growBuffer(data, capacity, glBuffer, needed) {
+    while (capacity < needed) capacity *= 2;
+    var grown = new Float32Array(capacity * INSTANCE_FLOATS);
+    grown.set(data);
+    gl.bindBuffer(gl.ARRAY_BUFFER, glBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, grown.byteLength, gl.DYNAMIC_DRAW);
+    return { data: grown, capacity: capacity };
+  }
+
+  function pushGlyph(x, y, w, h, uv, r, g, b, a) {
+    if (glyphCount >= glyphCapacity) {
+      var grown = growBuffer(glyphData, glyphCapacity, glyphBuffer, glyphCount + 1);
+      glyphData = grown.data;
+      glyphCapacity = grown.capacity;
+    }
+    var o = glyphCount * INSTANCE_FLOATS;
+    glyphData[o] = x; glyphData[o + 1] = y;
+    glyphData[o + 2] = w; glyphData[o + 3] = h;
+    glyphData[o + 4] = uv[0]; glyphData[o + 5] = uv[1]; glyphData[o + 6] = uv[2]; glyphData[o + 7] = uv[3];
+    glyphData[o + 8] = r; glyphData[o + 9] = g; glyphData[o + 10] = b; glyphData[o + 11] = a;
+    glyphCount++;
+  }
+
+  function pushWipe(x, y, w, h, uv, r, g, b, a) {
+    if (wipeCount >= wipeCapacity) {
+      var grown = growBuffer(wipeData, wipeCapacity, wipeBuffer, wipeCount + 1);
+      wipeData = grown.data;
+      wipeCapacity = grown.capacity;
+    }
+    var o = wipeCount * INSTANCE_FLOATS;
+    wipeData[o] = x; wipeData[o + 1] = y;
+    wipeData[o + 2] = w; wipeData[o + 3] = h;
+    wipeData[o + 4] = uv[0]; wipeData[o + 5] = uv[1]; wipeData[o + 6] = uv[2]; wipeData[o + 7] = uv[3];
+    wipeData[o + 8] = r; wipeData[o + 9] = g; wipeData[o + 10] = b; wipeData[o + 11] = a;
+    wipeCount++;
+  }
+
+  function pushGlow(x, y, size, r, g, b, a) {
+    if (glowCount >= glowCapacity) {
+      var grown = growBuffer(glowData, glowCapacity, glowBuffer, glowCount + 1);
+      glowData = grown.data;
+      glowCapacity = grown.capacity;
+    }
+    var o = glowCount * INSTANCE_FLOATS;
+    glowData[o] = x; glowData[o + 1] = y;
+    glowData[o + 2] = size; glowData[o + 3] = size;
+    glowData[o + 4] = 0; glowData[o + 5] = 0; glowData[o + 6] = 1; glowData[o + 7] = 1;
+    glowData[o + 8] = r; glowData[o + 9] = g; glowData[o + 10] = b; glowData[o + 11] = a;
+    glowCount++;
+  }
+
+  function resize() {
+    state.w = canvas.width = window.innerWidth;
+    state.h = canvas.height = window.innerHeight;
+    gl.viewport(0, 0, state.w, state.h);
+    buildColumns();
+  }
+
+  // Picks a fresh direction/row/size/speed and places the cat just off one
+  // edge of the screen, ready to walk across. Sized 3x the original flat
+  // sprite's on-screen scale (per request, with headroom to size back down
+  // later) — the parts atlas is baked at a matching 3x oversample (see
+  // BAKE_SCALE) so that headroom doesn't cost silhouette crispness.
+  function spawnCat() {
+    state.catDir = Math.random() < 0.5 ? 1 : -1;
+    state.catW = state.fontSize * (10.5 + Math.random() * 4.5);
+    state.catH = state.catW * 0.58;
+    state.catY = Math.random() * (state.h - state.catH);
+    state.catX = state.catDir > 0 ? -state.catW : state.w + state.catW;
+    state.catSpeed = state.fontSize * (0.028 + Math.random() * 0.014);
+    state.catGaitPhase = 0;
+  }
+
+  // TESTING: always walking, wrapping to a fresh crossing the instant it
+  // clears the far edge — the occasional timer-gated trigger comes later.
+  function updateCat() {
+    if (state.catW === 0) spawnCat();
+    state.catX += state.catDir * state.catSpeed;
+    // One full gait cycle (2*PI) per ~0.85 body-widths walked, so faster
+    // cats and bigger cats both turn their legs over at a natural-looking
+    // rate rather than a fixed frame-based cadence.
+    var strideLen = state.catW * 0.85;
+    state.catGaitPhase += (state.catSpeed / strideLen) * Math.PI * 2;
+    if (
+      (state.catDir > 0 && state.catX > state.w) ||
+      (state.catDir < 0 && state.catX + state.catW < 0)
+    ) {
+      spawnCat();
+    }
+  }
+
+  // Cat rig only ever occupies its fixed CAT_PART_COUNT slots — no growth,
+  // just overwritten and re-uploaded every frame it's active.
+  var catPartIndex = 0;
+  function pushCatPart(px, py, w, h, pivotU, pivotV, uv, rot, r, g, b, a) {
+    var o = catPartIndex * CAT_PART_FLOATS;
+    // aPos is chosen so that, before rotation, the pivot point (aUnit ==
+    // aPivot) lands exactly on the given world position (px, py) — see
+    // catPartsVsSrc: pixelPos = aPos + rotated + aPivot*aSize, and rotated
+    // is 0 at aUnit == aPivot.
+    catPartsData[o] = px - pivotU * w;
+    catPartsData[o + 1] = py - pivotV * h;
+    catPartsData[o + 2] = w; catPartsData[o + 3] = h;
+    catPartsData[o + 4] = uv[0]; catPartsData[o + 5] = uv[1]; catPartsData[o + 6] = uv[2]; catPartsData[o + 7] = uv[3];
+    catPartsData[o + 8] = r; catPartsData[o + 9] = g; catPartsData[o + 10] = b; catPartsData[o + 11] = a;
+    catPartsData[o + 12] = rot;
+    catPartsData[o + 13] = pivotU; catPartsData[o + 14] = pivotV;
+    catPartIndex++;
+  }
+
+  // Places one leg's thigh + shin for the given hip position/phase offset,
+  // via a small forward-kinematic chain: both parts hang straight down at
+  // rot=0 (that's how they're baked, pivot at their own top edge), so
+  // rotating a "hanging" part by angle a moves its far end to
+  // (-sin(a), cos(a)) * length relative to its pivot — a standard pendulum.
+  function pushLeg(hipX, hipY, thighLen, shinLen, legW, phaseOffset, dir, r, g, b, a) {
+    var swing = Math.sin(state.catGaitPhase + phaseOffset);
+    var swingAmp = 0.62;
+    var thighRot = dir * swingAmp * swing;
+    var kneeBend = 0.16 + 0.85 * Math.max(0, swing);
+    var shinRot = thighRot + dir * kneeBend;
+    pushCatPart(hipX, hipY, legW, thighLen, 0.5, 0.05, catPartUV.leg, thighRot, r, g, b, a);
+    var kneeX = hipX - thighLen * Math.sin(thighRot);
+    var kneeY = hipY + thighLen * Math.cos(thighRot);
+    pushCatPart(kneeX, kneeY, legW * 0.85, shinLen, 0.5, 0.05, catPartUV.leg, shinRot, r, g, b, a);
+  }
+
+  function writeCatRig() {
+    catPartIndex = 0;
+    var dir = state.catDir;
+    var S = state.catW, H = state.catH;
+    var phase = state.catGaitPhase;
+    var anchorX = state.catX + S / 2;
+    var anchorY = state.catY + H / 2;
+
+    // Dark shadow tint (a hint of the theme color, mostly black) at fairly
+    // high alpha — drawn behind the glyph passes, so the falling code
+    // renders over it and it reads as a shape moving through the rain
+    // rather than blocking it outright.
+    var dim = THEMES[state.theme].dimRgb;
+    var r = dim[0] * 0.45, g = dim[1] * 0.45, b = dim[2] * 0.45, a = 0.5;
+
+    var bodyW = S * 0.60, bodyH = H * 0.42;
+    var bodyBob = Math.sin(phase * 2) * H * 0.025;
+    var bodyCX = anchorX;
+    var bodyCY = anchorY - H * 0.10 + bodyBob;
+
+    var hipY = bodyCY + bodyH * 0.42;
+    var frontHipX = bodyCX + dir * bodyW * 0.30;
+    var backHipX = bodyCX - dir * bodyW * 0.30;
+    var thighLen = S * 0.30, shinLen = S * 0.28;
+
+    // Far pair (slightly smaller/higher, drawn first so the near pair and
+    // body overlap them) — cheap pseudo-depth for a side-on silhouette.
+    var legWFar = S * 0.045, legWNear = S * 0.052;
+    pushLeg(frontHipX, hipY - H * 0.02, thighLen * 0.92, shinLen * 0.92, legWFar, 0.35, dir, r, g, b, a);
+    pushLeg(backHipX, hipY - H * 0.02, thighLen * 0.92, shinLen * 0.92, legWFar, Math.PI + 0.35, dir, r, g, b, a);
+
+    pushCatPart(bodyCX, bodyCY, bodyW, bodyH, 0.5, 0.5, catPartUV.body, 0, r, g, b, a);
+
+    // Tail, two segments chained off the back of the body, resting pointed
+    // backward with a slow curling sway added on top.
+    var tailBaseX = bodyCX - dir * bodyW * 0.46;
+    var tailBaseY = bodyCY + bodyH * 0.10;
+    var restBack = dir > 0 ? Math.PI : 0;
+    var tailRot1 = restBack + 0.5 * Math.sin(phase * 1.2) - 0.35;
+    var tailLen1 = S * 0.40;
+    var tailEndX = tailBaseX + tailLen1 * Math.cos(tailRot1);
+    var tailEndY = tailBaseY + tailLen1 * Math.sin(tailRot1);
+    var tailRot2 = tailRot1 + 0.6 * Math.sin(phase * 1.2 - 0.9) - 0.25;
+    var tailLen2 = S * 0.30;
+    pushCatPart(tailBaseX, tailBaseY, tailLen1, S * 0.05, 0.05, 0.5, catPartUV.tail, tailRot1, r, g, b, a);
+    pushCatPart(tailEndX, tailEndY, tailLen2, S * 0.04, 0.05, 0.5, catPartUV.tail, tailRot2, r, g, b, a);
+
+    pushLeg(frontHipX, hipY, thighLen, shinLen, legWNear, 0, dir, r, g, b, a);
+    pushLeg(backHipX, hipY, thighLen, shinLen, legWNear, Math.PI, dir, r, g, b, a);
+
+    var headSize = H * 0.68;
+    var headCX = bodyCX + dir * bodyW * 0.48;
+    var headCY = bodyCY - bodyH * 0.35 + Math.sin(phase * 2 + 0.6) * H * 0.015;
+    var headRot = dir * 0.12 * Math.sin(phase * 2);
+    pushCatPart(headCX, headCY, headSize, headSize, 0.5, 0.5, catPartUV.head, headRot, r, g, b, a);
+  }
+
+  // 0-1, directly from the density slider — it's a literal percentage now
+  // (see buildColumns/step for what that percentage actually drives).
+  function densityNorm() {
+    return Math.max(0, Math.min(1, state.densityPct / 100));
+  }
+
+  // How far above the screen a fresh fall starts (bigger = more staggered,
+  // emptier-looking gap before it scrolls into view). Shrinks to exactly 0 at
+  // max density so a fresh fall enters already on-screen, never off the top.
+  function spawnRow() {
+    var spread = lerp(30, 0, densityNorm());
+    return -((Math.random() * spread) | 0);
+  }
+
+  // Base range is 42-108 glyphs; the Trail length slider scales that
+  // whole range up or down via state.trailLenMul, so short/long trails at
+  // 50% still vary the same relative amount as they do at 100% or 200%.
+  function randomTrailLen() {
+    return Math.round((42 + Math.random() * 66) * state.trailLenMul);
+  }
+
+  function newColumn(x) {
+    var row = spawnRow();
+    return {
+      x: Math.round(x),
+      row: row,
+      acc: Math.random(),
+      speed: 0.35 + Math.random() * 0.9,
+      trailLen: randomTrailLen(),
+      // Seed one glyph immediately so a column is never a blank frame while
+      // waiting on the first row tick to push a character into its trail.
+      trail: row >= 0 ? [randChar()] : [],
+      // Whether this cycle's halfway companion fall (see step()) has
+      // already been spawned — reset on every respawn so each new cycle
+      // gets its own.
+      halfSpawned: false,
+      // -1 means "not currently waiting to respawn" — see step().
+      exhaustedFrames: -1
+    };
+  }
+
+  // Column pitch as a ratio of font size, not a flat pixel offset — a flat
+  // px overlap (e.g. always -10px) is a shrinking fraction of the glyph as
+  // fontSize grows, so it visually loosens up at large sizes even though
+  // the raw pixel math never changes. Scaling by fontSize keeps the actual
+  // proportion of overlap-to-glyph-size fixed, so the look is identical at
+  // every font size. 0.583 reproduces the original -10px look at the
+  // default fontSize of 24 (24 - 10 = 14, 14/24 = 0.583).
+  var COLUMN_PITCH_RATIO = 0.400;
+  // Separate ratio for the vertical (top-to-bottom, within a trail) step —
+  // same scaling scheme as the column pitch (proportional to fontSize, so
+  // it looks identical at every font size), just tuned independently since
+  // 0.400 read as too tight vertically.
+  var ROW_PITCH_RATIO = 0.600;
+
+  function buildColumns() {
+    var spacing = state.fontSize * COLUMN_PITCH_RATIO;
+    state.colSpacing = spacing;
+    state.rowPitch = state.fontSize * ROW_PITCH_RATIO;
+    var count = Math.ceil(state.w / spacing);
+    var cols = [];
+    for (var i = 0; i < count; i++) cols.push(newColumn(i * spacing));
+    state.cols = cols;
+  }
+
+  // Interval (in ~frames, assuming ~60fps) until the next flood, driven by
+  // the Burst slider: 0% never floods, 100% floods every few seconds.
+  function pickNextFloodDelay() {
+    if (state.burstPct <= 0) return Infinity;
+    var burstNorm = state.burstPct / 100;
+    var minSec = lerp(90, 3, burstNorm);
+    var maxSec = lerp(180, 8, burstNorm);
+    return (minSec + Math.random() * (maxSec - minSec)) * 60;
+  }
+
+  // Adds one extra drop at the top of a column, layered on top of whatever
+  // is already falling there. One-shot: it falls once and is discarded,
+  // never touching or resetting the column's own continuous stream — that
+  // needs a genuinely separate object (not just an extra tick on the
+  // column itself) since the column's own trail keeps going, untouched, at
+  // the same time a fresh one starts at row 0.
+  function spawnFloodDrop(x) {
+    state.floodFalls.push({
+      x: x,
+      row: 0,
+      acc: 0,
+      speed: 0.35 + Math.random() * 0.9,
+      trailLen: randomTrailLen(),
+      trail: [randChar()]
+    });
+  }
+
+  // TESTING: a hidden word planted into columns that are already falling,
+  // rather than spawned as fresh drops of their own — so a letter can land
+  // anywhere in a column's existing trail (dim, mid, or bright, whatever
+  // that depth already reads as), not forced onto a fresh glowing head.
+  // pinnedCells on a *column* (not a floodFall) is a list of {row, char}
+  // cells to reassert each frame — see the protection in step()'s main
+  // column loop — so the 1% per-frame flicker can't corrupt them while
+  // visible, and they're cleared the moment that column naturally
+  // respawns.
+  //
+  // A trail entry's screen row is permanently fixed at the row it was
+  // created, not actually descending: appendFall places trail[d] at
+  // (f.row - d) * rowPitch, and d grows in lockstep with f.row (both +1
+  // per row tick), so f.row - d — and therefore Y position — stays
+  // constant for as long as that entry survives; only its color/alpha
+  // ages via trailColor(d / trailLen). That's true of every glyph in every
+  // trail (it's what makes the "falling" look cheap — only the head's
+  // position actually advances each frame, everything behind it is
+  // visually frozen and just fades) — which is exactly what lets a letter
+  // be dropped into an in-progress trail at a fixed target row and stay
+  // there, at whatever brightness that depth already implies.
+  var MESSAGE_WORDS = [
+    "matrix", "neo", "theone", "trinity", "morpheus", "smith", "cypher",
+    "tank", "dozer", "mouse", "switch", "apoc", "oracle",
+    "keymaker", "seraph", "merovingian", "persephone", "niobe", "link",
+    "zee", "ghost", "architect", "bane", "sati", "trainman", "deja vu", "wakeup"
+  ];
+
+  // A shared row picked from anywhere in the overlap of every column's
+  // valid range can leave some letters landing near their own tail — d
+  // (row distance behind that column's head) only bounded by that column's
+  // own trailLen, not by how far along its neighbors happen to be. Since
+  // brightness/opacity is purely a function of d/trailLen, a large d means
+  // an already-dim letter just a frame or two from being trimmed off —
+  // that's the "flashes too fast to read" symptom. Minimizing the row
+  // (see trySpawnMessage) helps, but only bounds the *worst* column's d by
+  // however far apart these particular columns' current rows already are
+  // — so the real fix is picking a run whose rows are already close
+  // together in the first place, not just any run with a technically
+  // non-empty overlap. maxRowSpread(...) measures that spread so
+  // trySpawnMessage can reject runs where it's too wide before ever
+  // computing a row.
+  function rowSpread(cols, start, word) {
+    var minRow = Infinity, maxRow = -Infinity, minTrailLen = Infinity;
+    for (var i = 0; i < word.length; i++) {
+      if (word[i] === " ") continue;
+      var col = cols[start + i];
+      minRow = Math.min(minRow, col.row);
+      maxRow = Math.max(maxRow, col.row);
+      minTrailLen = Math.min(minTrailLen, col.trailLen);
+    }
+    return { spread: maxRow - minRow, minRow: minRow, minTrailLen: minTrailLen };
+  }
+
+  // Reserves a random contiguous run of columns for one word — retrying a
+  // few times for a run whose current rows are close enough together that
+  // every letter can start near its own column's head (see rowSpread) —
+  // and pins one letter per non-space character directly into each
+  // column's existing trail, at row = minRow - 1 (one behind the least-far-
+  // along column in the run, d=0 itself skipped since that's the column's
+  // own natural head slot, always rendered as the special bright/glowing
+  // lead regardless of what character sits there — pinning into it would
+  // just recreate the "looks like the lead character" look this was meant
+  // to avoid). usedCols (a Set of column indices already claimed by an
+  // earlier word this burst) keeps multiple words from landing on the same
+  // column; claimed indices are added to it before returning. Returns the
+  // set of column x-positions it used (or null if no free, in-sync-enough
+  // run turned up within a handful of attempts).
+  function trySpawnMessage(word, usedCols) {
+    var cols = state.cols;
+    if (word.length > cols.length) return null;
+    // Scans every free start position rather than randomly sampling a
+    // handful and rejecting misses — random sampling works fine for short
+    // words (plenty of 3-4-column runs happen to be in sync), but a long
+    // word needs 7-11 *specific* columns in sync simultaneously, which a
+    // few dozen random guesses essentially never land on. An exhaustive
+    // scan (cheap: at most a few hundred column positions) instead finds
+    // whichever currently-free run has the least spread, so long words get
+    // the best available option instead of hoping to get lucky.
+    var bestStart = -1, bestInfo = null;
+    for (var candidate = 0; candidate <= cols.length - word.length; candidate++) {
+      var free = true;
+      for (var k = 0; k < word.length; k++) {
+        if (usedCols.has(candidate + k)) { free = false; break; }
+      }
+      if (!free) continue;
+      var info = rowSpread(cols, candidate, word);
+      if (info.minRow < 1) continue;
+      if (!bestInfo || info.spread < bestInfo.spread) {
+        bestInfo = info;
+        bestStart = candidate;
+      }
+    }
+    if (bestStart < 0) return null;
+
+    // The best achievable spread among currently-independent columns
+    // scales up with word length (more columns sampled = more variance),
+    // and grows the longer the page has been running (columns drift
+    // further out of step with each other over time) — direct
+    // measurement showed even the *best* available run for an 8+ letter
+    // word routinely exceeding any single fixed fraction of trailLen, so
+    // a whole-word reject-if-too-spread gate was starving every long word
+    // outright regardless of luck. Picking the best run and then checking
+    // each letter's own bounds individually (below) instead degrades
+    // gracefully — a long word in a bad moment shows whichever of its
+    // letters actually land in range rather than not showing at all.
+    var start = bestStart;
+    var row = bestInfo.minRow - 1;
+    var usedX = {};
+    for (var i = 0; i < word.length; i++) {
+      var idx = start + i;
+      usedCols.add(idx);
+      var col = cols[idx];
+      if (word[i] === " ") continue;
+      var d = col.row - row;
+      // Out of this particular column's own current trail bounds — skip
+      // just this letter rather than writing past the array's intended
+      // length (col.trail[d] on an out-of-range d would silently grow the
+      // array past trailLen, corrupting that column's own trim/fade math).
+      if (d < 0 || d >= col.trailLen) continue;
+      usedX[col.x] = true;
+      col.trail[d] = word[i];
+      col.pinnedCells = [{ row: row, char: word[i] }];
+    }
+    return usedX;
+  }
+
+  // Vertical placement: a whole word read top-to-bottom straight down one
+  // column's own already-existing trail. Unlike the horizontal case, this
+  // never fights cross-column desync at all — a single column's own trail
+  // entries are trivially self-consistent (same object, same clock), so
+  // there's no "how in-sync are these columns right now" problem to solve,
+  // just whether that one column's current trail happens to be long
+  // enough. Character order: trail index 0 is the head (bottom, newest);
+  // higher indices are further up-screen (older) — see appendFall's
+  // headY/glyphY math — so word[0] (read first, top of the word) goes at
+  // the *highest* index in the chosen span, working down to word[last] at
+  // the lowest.
+  function trySpawnMessageVertical(word, usedCols) {
+    var cols = state.cols;
+    var candidates = [];
+    for (var i = 0; i < cols.length; i++) {
+      if (!usedCols.has(i) && cols[i].trail.length >= word.length) candidates.push(i);
+    }
+    if (candidates.length === 0) return null;
+    var idx = candidates[(Math.random() * candidates.length) | 0];
+    var col = cols[idx];
+    usedCols.add(idx);
+    var dBase = (Math.random() * (col.trail.length - word.length + 1)) | 0;
+    var pinnedCells = [];
+    for (var i = 0; i < word.length; i++) {
+      if (word[i] === " ") continue;
+      var d = dBase + (word.length - 1 - i);
+      var row = col.row - d;
+      col.trail[d] = word[i];
+      pinnedCells.push({ row: row, char: word[i] });
+    }
+    col.pinnedCells = pinnedCells;
+    var usedX = {};
+    usedX[col.x] = true;
+    return usedX;
+  }
+
+  // The cat competes for a slot in the same per-burst budget Residuals
+  // words do, rather than triggering separately alongside whatever the
+  // slider allows — so at low "per burst" settings the cat gets crowded
+  // out just as often as any given word would be. It's just one entry in
+  // the shuffled pool (a cat reveal doesn't reserve columns the way a
+  // word does), so it costs exactly one slot even though CAT_VARIANTS
+  // has three options — which variant plays is still decided inside
+  // startCatReveal.
+  var CAT_POOL_ENTRY = { cat: true };
+
+  // Picks state.residualsCount entries at random out of MESSAGE_WORDS
+  // plus (if enabled) the cat (shuffle-and-slice, so nothing can be
+  // picked twice in the same burst) and tries to place/trigger each one
+  // — a word either randomly left-to-right across columns or
+  // top-to-bottom down one column (falling back to the other
+  // orientation if its first pick couldn't find a fit), a cat via
+  // startCatReveal (which itself no-ops if one is already showing).
+  function trySpawnAllMessages(usedCols) {
+    var usedX = {};
+    var pool = state.residualsEnabled ? MESSAGE_WORDS.slice() : [];
+    if (state.dejaVuEnabled) pool.push(CAT_POOL_ENTRY);
+    for (var s = pool.length - 1; s > 0; s--) {
+      var j = (Math.random() * (s + 1)) | 0;
+      var tmp = pool[s]; pool[s] = pool[j]; pool[j] = tmp;
+    }
+    var count = Math.min(state.residualsCount, pool.length);
+    for (var w = 0; w < count; w++) {
+      var entry = pool[w];
+      if (entry === CAT_POOL_ENTRY) {
+        startCatReveal();
+        continue;
+      }
+      var vertical = Math.random() < 0.5;
+      var placed = vertical
+        ? trySpawnMessageVertical(entry, usedCols) || trySpawnMessage(entry, usedCols)
+        : trySpawnMessage(entry, usedCols) || trySpawnMessageVertical(entry, usedCols);
+      if (placed) {
+        for (var x in placed) usedX[x] = true;
+      }
+    }
+    return usedX;
+  }
+
+  // The Deja Vu cat now lives in a fixed screen-space region rather than
+  // being planted into live column trails — it no longer depends on any
+  // column having trail coverage where the art needs it, so the whole
+  // shape is guaranteed to show, every time, in full. See startCatReveal/
+  // appendCatReveal and its handling in step().
+  var CAT_REVEAL_FRAMES_PER_ROW = 0.5; // wipe-in speed: one art row every N frames
+  var CAT_HOLD_FRAMES = 30; // ~0.4s at the ~60fps rAF drives this at
+  var CAT_FADE_FRAMES = 60; // ~0.8s — same trailColor() curve a trail's own tail fades on
+  var catRevealState = "idle"; // "idle" | "revealing" | "holding" | "fading"
+  var catRegionX = 0, catRegionY = 0;
+  var catRevealRow = 0; // how many art rows are currently fully shown
+  var catRevealAcc = 0; // frame accumulator for the per-row reveal pace
+  var catHoldFrames = 0;
+  var catFadeFrames = 0;
+  var catArt = CAT_ASCII_A; // whichever variant this reveal is showing
+
+  function startCatReveal() {
+    if (!state.dejaVuEnabled || catRevealState !== "idle") return;
+    catArt = CAT_VARIANTS[catVariantIndex];
+    catVariantIndex = (catVariantIndex + 1) % CAT_VARIANTS.length;
+    var artW = 0;
+    for (var r = 0; r < catArt.length; r++) artW = Math.max(artW, catArt[r].length);
+    var totalW = artW * state.colSpacing;
+    var totalH = catArt.length * state.rowPitch;
+    // Random placement each reveal rather than always dead-center —
+    // clamped so the full art always stays on-screen (falls back to
+    // centered on that axis if the art is wider/taller than the
+    // viewport, same as the old fixed-center behavior).
+    catRegionX = totalW < state.w ? Math.random() * (state.w - totalW) : (state.w - totalW) / 2;
+    catRegionY = totalH < state.h ? Math.random() * (state.h - totalH) : (state.h - totalH) / 2;
+    catRevealRow = 0;
+    catRevealAcc = 0;
+    catHoldFrames = 0;
+    catRevealState = "revealing";
+  }
+
+  // Advances the reveal/hold/fade timeline by one frame — top-down
+  // wipe-in, then a fixed hold, then a fade-out using the exact same
+  // trailColor() curve a normal trail's own tail fades on, then idle
+  // (the region simply stops rendering; normal rain underneath was never
+  // actually altered).
+  function updateCatReveal() {
+    if (catRevealState === "revealing") {
+      catRevealAcc++;
+      if (catRevealAcc >= CAT_REVEAL_FRAMES_PER_ROW) {
+        catRevealAcc = 0;
+        catRevealRow++;
+        if (catRevealRow >= catArt.length) {
+          catRevealState = "holding";
+          catHoldFrames = CAT_HOLD_FRAMES;
+        }
+      }
+    } else if (catRevealState === "holding") {
+      catHoldFrames--;
+      if (catHoldFrames <= 0) {
+        catRevealState = "fading";
+        catFadeFrames = CAT_FADE_FRAMES;
+      }
+    } else if (catRevealState === "fading") {
+      catFadeFrames--;
+      if (catFadeFrames <= 0) catRevealState = "idle";
+    }
+  }
+
+  // Draws the currently-revealed art rows directly at their fixed screen
+  // position, on top of everything else this frame — plain colored text,
+  // no glow or wipe-box, independent of any column's trail state
+  // entirely. While fading, color/alpha follows trailColor()'s own
+  // fade-out curve, so the cat dissolves exactly the way a trail's tail
+  // does rather than just vanishing outright.
+  function appendCatReveal(theme) {
+    if (catRevealState === "idle") return;
+    var rowsToShow = catRevealState === "revealing" ? catRevealRow : catArt.length;
+
+    var color = theme.brightRgb;
+    var alpha = 1;
+    if (catRevealState === "fading") {
+      var f = 1 - catFadeFrames / CAT_FADE_FRAMES;
+      var fc = trailColor(theme, f);
+      color = fc;
+      alpha = fc[3];
+    }
+
+    for (var r = 0; r < rowsToShow; r++) {
+      var line = catArt[r];
+      for (var c = 0; c < line.length; c++) {
+        var ch = line[c];
+        if (ch === " ") continue;
+        var uv = charUV[ch];
+        if (!uv) continue;
+        var x = catRegionX + c * state.colSpacing;
+        var y = catRegionY + r * state.rowPitch;
+        pushGlyph(x, y, state.fontSize, state.fontSize, uv, color[0], color[1], color[2], alpha);
+      }
+    }
+  }
+
+  // Giving every column a flood drop on the same frame is a real brightness
+  // jump (every one a fresh, overlapping glow at row 0 simultaneously) even
+  // with the glow-size cap above limiting how far each one spreads. A small
+  // random per-column delay (not an ordered sweep — that read as a visible
+  // left-to-right draw-in) spreads spawns across a few frames with no
+  // directional pattern to see, just short enough that it can't be
+  // perceived as an animation, only long enough to break the synchronized
+  // peak.
+  var FLOOD_RAMP_FRAMES = 5;
+  var floodQueue = []; // { x, delay }
+
+  function triggerFlood() {
+    var usedCols = new Set();
+    var messageX = {};
+
+    // Residuals words and the Deja Vu cat now share one per-burst budget
+    // (state.residualsCount, see trySpawnAllMessages) — the cat is just
+    // one more entry in that shuffled pool, so it only runs here if at
+    // least one of the two features is actually turned on. Whichever
+    // columns a placed word claims are excluded below so they don't also
+    // get a second, random-character flood drop layered on top; the cat
+    // doesn't claim any columns (it's a fixed screen-space overlay, see
+    // startCatReveal), so it never shows up in messageX.
+    if (state.residualsEnabled || state.dejaVuEnabled) {
+      var wordsX = trySpawnAllMessages(usedCols);
+      for (var wx in wordsX) messageX[wx] = true;
+    }
+
+    floodQueue = state.cols
+      .filter(function (c) { return !messageX[c.x]; })
+      .map(function (c) {
+        return { x: c.x, delay: (Math.random() * FLOOD_RAMP_FRAMES) | 0 };
+      });
+  }
+
+  // Advances one fall by a tick: ages its accumulator, ticks whole rows,
+  // and grows/trims its trail. Returns true once the entire trail has
+  // scrolled past the bottom of the screen.
+  function advanceFall(f) {
+    f.acc += f.speed * state.speedMul * 0.4;
+    var advanced = 0;
+    while (f.acc >= 1 && advanced < f.trailLen) {
+      f.acc -= 1;
+      f.row++;
+      f.trail.unshift(randChar());
+      advanced++;
+    }
+    if (f.trail.length > f.trailLen) f.trail.length = f.trailLen;
+    return f.row * state.rowPitch - f.trailLen * state.rowPitch > state.h;
+  }
+
+  // A column's pinnedCells list is tiny (at most one word's worth of
+  // letters, ~3-11), so a linear scan per glyph is cheap — finds whichever
+  // pinned cell (if any) currently sits at trail depth d, so appendFall
+  // can read that cell's own styling (a cell's own depth drifts as the
+  // column's head advances, so this is recomputed from its fixed row each
+  // call rather than cached). Returns undefined if d isn't pinned.
+  function pinnedCellAtDepth(f, d) {
+    for (var i = 0; i < f.pinnedCells.length; i++) {
+      if (f.row - f.pinnedCells[i].row === d) return f.pinnedCells[i];
+    }
+  }
+
+  // Appends this fall's currently-visible glyphs into the shared per-frame
+  // instance arrays — pure array writes, no rasterization. The actual
+  // drawing happens once, for everything at once, in render().
+  var GLOW_SCALE = 1.875;
+  function appendFall(f, theme) {
+    var headY = f.row * state.rowPitch;
+    for (var d = 0; d < f.trail.length; d++) {
+      var glyphY = headY - d * state.rowPitch;
+      if (glyphY < -state.fontSize || glyphY > state.h) continue;
+      if (Math.random() < 0.01) f.trail[d] = randChar();
+      var uv = charUV[f.trail[d]];
+      if (d === 0) {
+        // Capped relative to actual column spacing, not just font size —
+        // at high density (columns packed tighter than font size) the
+        // uncapped glow overlapped many neighboring columns at once, and
+        // a burst (which gives every column a fresh glow simultaneously,
+        // all starting at row 0) turned that into a sudden, screen-wide
+        // brightness surge bleeding through existing trail glyphs' own
+        // partial alpha. Only shrinks the glow where density is tight
+        // enough for this to matter — normal-density look is unchanged.
+        var glowSize = Math.min(state.fontSize * GLOW_SCALE, state.colSpacing * 3);
+        pushGlow(
+          f.x + state.fontSize / 2 - glowSize / 2,
+          glyphY + state.fontSize / 2 - glowSize / 2,
+          glowSize,
+          theme.brightRgb[0], theme.brightRgb[1], theme.brightRgb[2], 0.225
+        );
+        // Wipe just this one cell first (opaque, colSpacing-wide so it can't
+        // bleed into a neighboring column at tight/high-density spacing) so
+        // the head reads as one crisp glyph even when a flood drop's head
+        // lands on a cell another fall's tail already occupies this frame —
+        // a glyph's texture is transparent everywhere but its ink, so
+        // without this the old tail would show through the gaps around the
+        // new head's character shape.
+        pushWipe(f.x, glyphY, state.colSpacing, state.fontSize, blockUV, BG_R, BG_G, BG_B, 1.0);
+        pushGlyph(f.x, glyphY, state.fontSize, state.fontSize, uv, theme.leadRgb[0], theme.leadRgb[1], theme.leadRgb[2], 1.0);
+      } else {
+        var c = trailColor(theme, d / f.trailLen);
+        var pinnedCell = f.pinnedCells && pinnedCellAtDepth(f, d);
+        if (pinnedCell) {
+          // A pinned Residuals letter still uses its natural trail-depth
+          // color as a base (not the full lead/glow treatment — that's
+          // what caused the synchronized-cascade look earlier), but
+          // blended partway toward the theme's bright color and floored
+          // at a high alpha, so it reads as legibly brighter than its
+          // surrounding glyphs instead of blending in completely
+          // invisibly.
+          var boost = 0.65;
+          pushGlyph(
+            f.x, glyphY, state.fontSize, state.fontSize, uv,
+            lerp(c[0], theme.brightRgb[0], boost),
+            lerp(c[1], theme.brightRgb[1], boost),
+            lerp(c[2], theme.brightRgb[2], boost),
+            Math.max(c[3], 0.92)
+          );
+        } else {
+          pushGlyph(f.x, glyphY, state.fontSize, state.fontSize, uv, c[0], c[1], c[2], c[3]);
+        }
+      }
+    }
+  }
+
+  function render() {
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Cat rig drawn first of all, furthest back — the wipe/glow/glyph
+    // passes (all below) render over it, so it reads as a shape moving
+    // behind the falling code, visible through the gaps between glyphs
+    // rather than sitting on top of them.
+    if (state.catActive) {
+      gl.useProgram(catPartsProgram);
+      gl.uniform2f(catPartsUResolution, state.w, state.h);
+      gl.uniform1i(catPartsUAtlas, 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, catPartsTexture);
+      gl.bindVertexArray(catPartsVAO);
+      gl.bindBuffer(gl.ARRAY_BUFFER, catPartsBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, catPartsData);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, CAT_PART_COUNT);
+    }
+
+    // Wipe pass first (opaque head-cell erasure), then glow (soft halos)
+    // on top of the wipe, then glyph pass on top of that (crisp text) —
+    // so a head's glow is visible over its own wipe quad instead of being
+    // painted over by it, and the crisp head glyph still reads on top.
+    if (wipeCount > 0) {
+      gl.useProgram(glyphProgram);
+      gl.uniform2f(glyphUResolution, state.w, state.h);
+      gl.uniform1i(glyphUAtlas, 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+      gl.bindVertexArray(wipeVAO);
+      gl.bindBuffer(gl.ARRAY_BUFFER, wipeBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, wipeData.subarray(0, wipeCount * INSTANCE_FLOATS));
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, wipeCount);
+    }
+
+    if (glowCount > 0) {
+      gl.useProgram(glowProgram);
+      gl.uniform2f(glowUResolution, state.w, state.h);
+      gl.bindVertexArray(glowVAO);
+      gl.bindBuffer(gl.ARRAY_BUFFER, glowBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, glowData.subarray(0, glowCount * INSTANCE_FLOATS));
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, glowCount);
+    }
+
+    if (glyphCount > 0) {
+      gl.useProgram(glyphProgram);
+      gl.uniform2f(glyphUResolution, state.w, state.h);
+      gl.uniform1i(glyphUAtlas, 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, atlasTexture);
+      gl.bindVertexArray(glyphVAO);
+      gl.bindBuffer(gl.ARRAY_BUFFER, glyphBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, glyphData.subarray(0, glyphCount * INSTANCE_FLOATS));
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, glyphCount);
+    }
+
+    gl.bindVertexArray(null);
+  }
+
+  function step() {
+    var t = THEMES[state.theme];
+
+    state.floodTimer++;
+    if (state.floodTimer >= state.nextFloodDelay) {
+      triggerFlood();
+      state.floodTimer = 0;
+      state.nextFloodDelay = pickNextFloodDelay();
+    }
+
+    // Spawn any queued flood drops whose random delay has elapsed.
+    if (floodQueue.length > 0) {
+      var stillWaiting = [];
+      for (var q = 0; q < floodQueue.length; q++) {
+        var pending = floodQueue[q];
+        if (pending.delay <= 0) {
+          spawnFloodDrop(pending.x);
+        } else {
+          pending.delay--;
+          stillWaiting.push(pending);
+        }
+      }
+      floodQueue = stillWaiting;
+    }
+
+    updateCatReveal();
+
+    if (state.catActive) {
+      updateCat();
+      writeCatRig();
+    }
+
+    glyphCount = 0;
+    glowCount = 0;
+    wipeCount = 0;
+
+    // Pushed before the rain itself, not after — everything in the glyph
+    // pass draws in insertion order, so falling code appended afterward
+    // (below) naturally paints over the cat wherever a glyph lands on top
+    // of it that frame, instead of the cat sitting fixed above the rain
+    // every frame regardless of what's falling through it.
+    appendCatReveal(t);
+
+    for (var i = 0; i < state.cols.length; i++) {
+      var c = state.cols[i];
+
+      var exhausted = advanceFall(c);
+      if (exhausted) {
+        if (c.exhaustedFrames < 0) c.exhaustedFrames = 0;
+        // Recomputed every frame (cheap arithmetic) rather than fixed once
+        // at the start of the wait, so dragging the density slider while a
+        // column is already waiting takes effect immediately instead of
+        // that column being stuck on a stale target — or stuck forever if
+        // it started waiting while density was 0%. activeFrames is how
+        // long the fall that just finished actually took; matching the
+        // empty/active time ratio to the density fraction is what makes
+        // "density" mean "percent of columns active" regardless of that
+        // column's own speed, trailLen, or the current zoom/screen size.
+        var activeFrames = (state.h / state.rowPitch + c.trailLen) / (c.speed * state.speedMul * 0.4);
+        var densityFrac = densityNorm();
+        var targetWait = densityFrac > 0 ? activeFrames * (1 - densityFrac) / densityFrac : Infinity;
+        if (c.exhaustedFrames >= targetWait) {
+          // Respawn before appending, in the same tick, so a fall that has
+          // just finished waiting is replaced by its next seeded glyph on
+          // this very frame rather than leaving one blank frame at the
+          // handoff.
+          c.row = spawnRow();
+          c.acc = 0;
+          c.speed = 0.35 + Math.random() * 0.9;
+          c.trailLen = randomTrailLen();
+          c.trail = c.row >= 0 ? [randChar()] : [];
+          c.halfSpawned = false;
+          c.exhaustedFrames = -1;
+          // Pinned message letters belong to the trail that's ending —
+          // don't let them bleed into this column's next, unrelated cycle.
+          c.pinnedCells = null;
+        } else {
+          c.exhaustedFrames++;
+        }
+      } else if (!c.halfSpawned && c.row >= 0.5 * (state.h / state.rowPitch + c.trailLen)) {
+        // A column's own head scrolls off-screen well before its tail
+        // finishes clearing the bottom — for a long stretch there's no
+        // bright head visible for that column at all, just a fading tail.
+        // Rather than wait out the rest of that stretch, start the next
+        // fall now, at the top, while this one keeps falling untouched —
+        // same mechanism a burst drop uses (single-cell head-wipe), just
+        // triggered per-column instead of by the burst timer.
+        spawnFloodDrop(c.x);
+        c.halfSpawned = true;
+      }
+
+      if (c.pinnedCells) {
+        var stillPinned = [];
+        for (var pc = 0; pc < c.pinnedCells.length; pc++) {
+          var cell = c.pinnedCells[pc];
+          var pd = c.row - cell.row;
+          if (pd >= 0 && pd < c.trail.length) {
+            c.trail[pd] = cell.char;
+            stillPinned.push(cell);
+          }
+        }
+        c.pinnedCells = stillPinned.length > 0 ? stillPinned : null;
+      }
+
+      appendFall(c, t);
+    }
+
+    // Flood falls are appended after columns and pruned once they've fully
+    // passed — they never loop back or interrupt a column's own stream.
+    // Drawing them after columns means their head's wipe-quad correctly
+    // paints over whatever a column already put at that cell this frame.
+    for (var j = state.floodFalls.length - 1; j >= 0; j--) {
+      var ff = state.floodFalls[j];
+      var done = advanceFall(ff);
+      appendFall(ff, t);
+      if (done) state.floodFalls.splice(j, 1);
+    }
+
+    render();
+  }
+
+  var rafId = null;
+  function loop() {
+    if (!state.running) return;
+    step();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function play() {
+    if (state.running) return;
+    state.running = true;
+    document.getElementById("resumeCta").classList.remove("show");
+    document.getElementById("systemFailure").classList.remove("show");
+    document.getElementById("pauseBtn").textContent = "Take the Red Pill";
+    document.getElementById("pauseBtn").setAttribute("aria-pressed", "false");
+    loop();
+  }
+  function pause() {
+    state.running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    document.getElementById("systemFailure").classList.add("show");
+    document.getElementById("pauseBtn").textContent = "Take the Blue Pill";
+    document.getElementById("pauseBtn").setAttribute("aria-pressed", "true");
+  }
+
+  window.addEventListener("resize", resize);
+
+  state.floodTimer = 0;
+  state.nextFloodDelay = pickNextFloodDelay();
+
+  buildAtlas();
+  buildCatPartsTexture();
+  setRootVars(state.theme);
+  resize();
+
+  // Draw a few settled frames immediately so a paused/reduced-motion view isn't blank.
+  for (var k = 0; k < 6; k++) step();
+
+  if (state.running) {
+    loop();
+  } else {
+    document.getElementById("resumeCta").classList.add("show");
+    document.getElementById("pauseBtn").textContent = "Take the Blue Pill";
+    document.getElementById("pauseBtn").setAttribute("aria-pressed", "true");
+  }
+
+  document.getElementById("resumeBtn").addEventListener("click", play);
+
+  var panel = document.getElementById("panel");
+  var panelTab = document.getElementById("panelTab");
+  function openPanel() {
+    panel.classList.add("open");
+    panelTab.setAttribute("aria-expanded", "true");
+    panelTab.style.display = "none";
+  }
+  function closePanel() {
+    panel.classList.remove("open");
+    panelTab.setAttribute("aria-expanded", "false");
+    panelTab.style.display = "";
+    panelTab.focus();
+  }
+  panelTab.addEventListener("click", openPanel);
+  document.getElementById("panelClose").addEventListener("click", closePanel);
+
+  document.getElementById("speed").addEventListener("input", function (e) {
+    var raw = parseFloat(e.target.value);
+    // One tick past the 3.0x cap is a hidden gear: "The One" — 10x speed.
+    if (raw >= 3.05) {
+      state.speedMul = 10;
+      document.getElementById("speedVal").textContent = "The One";
+    } else {
+      state.speedMul = raw;
+      // Below 1x, one decimal rounds everything under ~0.05 down to a
+      // useless "0.0×" — show two decimals down there instead.
+      document.getElementById("speedVal").textContent = (raw < 1 ? raw.toFixed(2) : raw.toFixed(1)) + "×";
+    }
+  });
+
+  document.getElementById("zoom").addEventListener("input", function (e) {
+    state.fontSize = parseFloat(e.target.value);
+    document.getElementById("zoomVal").textContent = Math.round(state.fontSize) + "px";
+    // buildColumns() already replaces every column with a fresh one, but
+    // burst/flood drops live in a separate array it doesn't touch — left
+    // alone, those keep falling at the old font size until they exit on
+    // their own, which is the "takes a long time to clear" lag.
+    state.floodFalls = [];
+    floodQueue = [];
+    buildColumns();
+  });
+
+  document.getElementById("density").addEventListener("input", function (e) {
+    state.densityPct = parseFloat(e.target.value);
+    document.getElementById("densityVal").textContent = Math.round(state.densityPct) + "%";
+    // No rebuild needed — density no longer affects the column grid, only
+    // each column's own respawn timing (see step()), which just picks up
+    // the new value the next time each column naturally exhausts.
+  });
+
+  document.getElementById("burst").addEventListener("input", function (e) {
+    state.burstPct = parseFloat(e.target.value);
+    document.getElementById("burstVal").textContent = state.burstPct <= 0 ? "Off" : Math.round(state.burstPct) + "%";
+    state.nextFloodDelay = pickNextFloodDelay();
+  });
+
+  document.getElementById("trailLen").addEventListener("input", function (e) {
+    state.trailLenMul = parseFloat(e.target.value) / 100;
+    document.getElementById("trailLenVal").textContent = Math.round(e.target.value) + "%";
+  });
+
+  document.getElementById("residualsToggle").addEventListener("click", function () {
+    state.residualsEnabled = !state.residualsEnabled;
+    this.setAttribute("aria-pressed", String(state.residualsEnabled));
+    this.textContent = state.residualsEnabled ? "On" : "Off";
+  });
+
+  // Slider's max is set here rather than hardcoded in the markup, so it
+  // always matches MESSAGE_WORDS.length (+1 for the cat's own slot in
+  // the same pool, see trySpawnAllMessages) even if the word list grows
+  // or shrinks later. Default value (28, i.e. max — all 27 words plus
+  // the cat) is left as a fixed number rather than auto-tracking that
+  // max formula, so it won't silently drift if the word list changes.
+  var residualsCountEl = document.getElementById("residualsCount");
+  var residualsCountDefault = 27;
+  residualsCountEl.max = MESSAGE_WORDS.length + 1;
+  residualsCountEl.value = residualsCountDefault;
+  state.residualsCount = residualsCountDefault;
+  document.getElementById("residualsCountVal").textContent = residualsCountDefault;
+  residualsCountEl.addEventListener("input", function (e) {
+    state.residualsCount = parseInt(e.target.value, 10);
+    document.getElementById("residualsCountVal").textContent = state.residualsCount;
+  });
+
+  document.getElementById("dejaVuToggle").addEventListener("click", function () {
+    state.dejaVuEnabled = !state.dejaVuEnabled;
+    this.setAttribute("aria-pressed", String(state.dejaVuEnabled));
+    this.textContent = state.dejaVuEnabled ? "On" : "Off";
+  });
+
+  var swatches = document.querySelectorAll(".swatch");
+  swatches.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      swatches.forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      state.theme = btn.getAttribute("data-theme");
+      setRootVars(state.theme);
+    });
+  });
+
+  // Scoped to [data-charset] specifically — the Residuals toggle reuses
+  // the same .charset-toggle class purely for shared styling, but isn't
+  // one of the character-set buttons this loop wires up. Without this
+  // scoping it matched that button too, and since it has no data-charset
+  // attribute the handler's "next enabled state" always evaluated true,
+  // forcing aria-pressed back to "true" right after Residuals' own click
+  // handler had just set it to "false".
+  var charsetToggles = document.querySelectorAll(".charset-toggle[data-charset]");
+  charsetToggles.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var key = btn.getAttribute("data-charset");
+      var next = !state.charSets[key];
+      // Block turning off the last remaining set from the UI — leaves
+      // activeChars()'s empty-pool fallback purely as a defensive backstop,
+      // not a state the toggles can actually walk the user into.
+      if (!next) {
+        var others = Object.keys(state.charSets).some(function (k) {
+          return k !== key && state.charSets[k];
+        });
+        if (!others) return;
+      }
+      state.charSets[key] = next;
+      btn.setAttribute("aria-pressed", String(next));
+    });
+  });
+
+  document.getElementById("pauseBtn").addEventListener("click", function () {
+    if (state.running) { pause(); } else { play(); }
+  });
+
+  window.addEventListener("keydown", function (e) {
+    if (e.code === "Space" && e.target === document.body) {
+      e.preventDefault();
+      if (state.running) pause(); else play();
+    }
+  });
+
+  document.body.addEventListener("pointermove", function () {
+    document.body.classList.remove("dim");
+    clearTimeout(window.__dimT);
+    window.__dimT = setTimeout(function () {
+      document.body.classList.add("dim");
+    }, 4000);
+  });
+})();
+</script>
